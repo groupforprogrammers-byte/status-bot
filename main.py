@@ -16,13 +16,16 @@ app = Flask(__name__)
 # --- CONFIGURATION ---
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
-    raise ValueError("BOT_TOKEN is missing! Please set it in your .env file.")
+    raise ValueError("BOT_TOKEN is missing! Please set it in your .env file or Render environment settings.")
 
 CHANNELS_FILE = "channels.json"
 DB_NAME = "tracker.db"
 
-# Lock for thread-safe file operations
+# Lock for thread-safe file operations across requests
 file_lock = threading.Lock()
+
+# Global single Bot instance to avoid httpx re-initialization overhead
+bot_instance = Bot(token=BOT_TOKEN)
 
 
 # --- CHANNELS JSON HELPERS ---
@@ -45,7 +48,6 @@ def save_channels(channels):
 
 def add_or_update_channel(chat_id, title, username, added_by_user):
     channels = load_channels()
-    # Check if already registered
     existing = next((ch for ch in channels if str(ch["chat_id"]) == str(chat_id)), None)
 
     if existing:
@@ -132,7 +134,6 @@ async def track_my_chat_member(update: Update, context: ContextTypes.DEFAULT_TYP
     added_by = result.from_user.username if result.from_user else ""
 
     if new_status in ["administrator", "member"]:
-        # Bot was added to channel
         print(f"[AUTO-DISCOVERY] Added to channel: {chat.title} ({chat.id})")
         add_or_update_channel(
             chat_id=chat.id,
@@ -141,13 +142,12 @@ async def track_my_chat_member(update: Update, context: ContextTypes.DEFAULT_TYP
             added_by_user=added_by
         )
     elif new_status in ["left", "kicked"]:
-        # Bot was removed from channel
         print(f"[AUTO-DISCOVERY] Removed from channel: {chat.title} ({chat.id})")
         remove_channel(chat.id)
 
 
 def start_bot_polling():
-    """Runs the Telegram Bot event loop in a background thread."""
+    """Runs the Telegram Bot event listener in a dedicated background thread."""
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
@@ -161,15 +161,14 @@ def start_bot_polling():
     loop.run_until_complete(tg_app.updater.start_polling(allowed_updates=Update.ALL_TYPES))
 
 
-# Start background bot listener
+# Start background bot listener thread
 bot_thread = threading.Thread(target=start_bot_polling, daemon=True)
 bot_thread.start()
 
 
-# --- DASHBOARD LOGIC ---
+# --- DASHBOARD DATA FETCHING ---
 async def fetch_channel_counts():
     accounts = load_channels()
-    bot = Bot(token=BOT_TOKEN)
     channel_results = []
     total_subs = 0
 
@@ -180,17 +179,18 @@ async def fetch_channel_counts():
         owner = acc.get("owner", "")
 
         try:
-            count = await bot.get_chat_member_count(chat_id=chat_id)
+            # Re-use global bot_instance
+            count = await bot_instance.get_chat_member_count(chat_id=chat_id)
             total_subs += count
         except Exception as e:
             print(f"Failed to fetch count for '{name}' ({chat_id}): {e}")
             count = "Error"
 
-        # Format Telegram links
+        # Format Telegram links safely
         if username:
             channel_url = f"https://t.me/{username}"
         elif str(chat_id).startswith("-100"):
-            channel_url = "#"  # Private group/channel
+            channel_url = "#"  # Private channel
         else:
             channel_url = f"https://t.me/{str(chat_id).replace('@', '')}"
 
@@ -209,12 +209,11 @@ async def fetch_channel_counts():
 # --- FLASK ROUTES ---
 @app.route('/')
 def index():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
     try:
-        channel_data, total_subscribers, total_channels = loop.run_until_complete(fetch_channel_counts())
-    finally:
-        loop.close()
+        channel_data, total_subscribers, total_channels = asyncio.run(fetch_channel_counts())
+    except Exception as e:
+        print(f"Error fetching channel counts: {e}")
+        channel_data, total_subscribers, total_channels = [], 0, 0
 
     unique_users, active_users = get_user_analytics()
 
@@ -230,12 +229,11 @@ def index():
 
 @app.route('/export')
 def export_csv():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
     try:
-        channel_data, _, _ = loop.run_until_complete(fetch_channel_counts())
-    finally:
-        loop.close()
+        channel_data, _, _ = asyncio.run(fetch_channel_counts())
+    except Exception as e:
+        print(f"Error exporting CSV data: {e}")
+        channel_data = []
 
     def generate_csv():
         yield "Channel Name,Subscribers,Channel Link,Owner Contact Link\n"
@@ -248,6 +246,12 @@ def export_csv():
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment; filename=telegram_channels_export.csv"}
     )
+
+
+@app.route('/favicon.ico')
+def favicon():
+    """Silence browser favicon 404 error requests in Render logs."""
+    return Response(status=204)
 
 
 if __name__ == '__main__':
