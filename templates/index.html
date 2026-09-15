@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dynamic Telegram Channels Status Page</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --border: #334155;
+      --green: #22c55e;
+      --red: #ef4444;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 2rem;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--card-bg);
+      padding: 1.25rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .stat-title {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: bold;
+      margin-top: 0.5rem;
+    }
+    .btn {
+      background: var(--accent);
+      color: #0f172a;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: var(--accent-hover); color: #fff; }
+    .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+    .btn-outline { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+    .btn-outline:hover { background: var(--accent); color: #0f172a; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card-bg);
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    th, td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th { background: #0b1120; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; }
+    .badge {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+    .badge-online { background: var(--green); }
+    .badge-offline { background: var(--red); }
+    .empty-msg {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div>
+      <h2 style="margin: 0;">Telegram Status Dashboard</h2>
+      <p style="margin: 0.25rem 0 0; color: var(--text-muted);">Auto-discovers channels when bot is added as Admin</p>
+    </div>
+    <a href="/export" class="btn">Export CSV Data</a>
+  </div>
+
+  <!-- Metric Overview Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-title">Discovered Channels</div>
+      <div class="stat-value">{{ total_channels }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-title">Combined Subscribers</div>
+      <div class="stat-value" style="color: var(--accent);">{{ "{:,}".format(total_subscribers) }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-title">Unique Bot Users</div>
+      <div class="stat-value">{{ "{:,}".format(unique_users) }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-title">Active Users (24h)</div>
+      <div class="stat-value" style="color: var(--green);">{{ "{:,}".format(active_users) }}</div>
+    </div>
+  </div>
+
+  <!-- Dynamic Channel Table -->
+  {% if channels %}
+  <table>
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Channel Name</th>
+        <th>Subscribers</th>
+        <th>Direct Channel Link</th>
+        <th>Owner / Admin Contact</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ch in channels %}
+      <tr>
+        <td>
+          {% if ch.count != "Error" %}
+            <span class="badge badge-online"></span> Active
+          {% else %}
+            <span class="badge badge-offline"></span> Access Revoked
+          {% endif %}
+        </td>
+        <td><strong>{{ ch.name }}</strong></td>
+        <td>
+          {% if ch.count != "Error" %}
+            {{ "{:,}".format(ch.count) }}
+          {% else %}
+            <span style="color: var(--red);">Not Admin</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if ch.channel_url != "#" %}
+            <a href="{{ ch.channel_url }}" target="_blank" class="btn btn-sm">Visit Channel</a>
+          {% else %}
+            <span style="color: var(--text-muted);">Private Channel</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if ch.owner_url != "#" %}
+            <a href="{{ ch.owner_url }}" target="_blank" class="btn btn-sm btn-outline">Contact Owner</a>
+          {% else %}
+            <span style="color: var(--text-muted);">Unknown Owner</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="stat-card empty-msg">
+    <h3>No channels connected yet!</h3>
+    <p>Add your bot as an administrator to any Telegram channel/group, and it will automatically show up here.</p>
+  </div>
+  {% endif %}
+
+</body>
+</html>
