@@ -24,8 +24,6 @@ DB_NAME = "tracker.db"
 # Lock for thread-safe file operations across requests
 file_lock = threading.Lock()
 
-# Global single Bot instance to avoid httpx re-initialization overhead
-bot_instance = Bot(token=BOT_TOKEN)
 
 
 # --- CHANNELS JSON HELPERS ---
@@ -120,7 +118,15 @@ def get_user_analytics():
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user:
         record_user_activity(update.effective_user.id)
-    await update.message.reply_text("Bot active! Add me as an admin to your channels to auto-track them.")
+    channels = load_channels()
+    connected_count = len(channels)
+    reply_text = (
+        f"🤖 Bot is working and online!\n\n"
+        f"📊 Connected channels: {connected_count}\n\n"
+        f"💡 Add me as an administrator to your Telegram channel or group to automatically track it on the dashboard."
+    )
+    if update.message:
+        await update.message.reply_text(reply_text)
 
 
 async def track_my_chat_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -141,24 +147,28 @@ async def track_my_chat_member(update: Update, context: ContextTypes.DEFAULT_TYP
             username=chat.username or "",
             added_by_user=added_by
         )
-    elif new_status in ["left", "kicked"]:
+    elif new_status in ["left", "kicked", "restricted"]:
         print(f"[AUTO-DISCOVERY] Removed from channel: {chat.title} ({chat.id})")
         remove_channel(chat.id)
 
 
 def start_bot_polling():
     """Runs the Telegram Bot event listener in a dedicated background thread."""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
 
-    tg_app = Application.builder().token(BOT_TOKEN).build()
-    tg_app.add_handler(CommandHandler("start", start_command))
-    tg_app.add_handler(ChatMemberHandler(track_my_chat_member, ChatMemberHandler.MY_CHAT_MEMBER))
+        tg_app = Application.builder().token(BOT_TOKEN).build()
+        tg_app.add_handler(CommandHandler("start", start_command))
+        tg_app.add_handler(ChatMemberHandler(track_my_chat_member, ChatMemberHandler.MY_CHAT_MEMBER))
 
-    print("Starting Telegram Bot listener for auto-discovery...")
-    loop.run_until_complete(tg_app.initialize())
-    loop.run_until_complete(tg_app.start())
-    loop.run_until_complete(tg_app.updater.start_polling(allowed_updates=Update.ALL_TYPES))
+        print("Starting Telegram Bot listener for auto-discovery...")
+        loop.run_until_complete(tg_app.initialize())
+        loop.run_until_complete(tg_app.start())
+        loop.run_until_complete(tg_app.updater.start_polling(allowed_updates=Update.ALL_TYPES))
+        loop.run_forever()
+    except Exception as e:
+        print(f"Error in Telegram bot polling thread: {e}")
 
 
 # Start background bot listener thread
@@ -172,36 +182,36 @@ async def fetch_channel_counts():
     channel_results = []
     total_subs = 0
 
-    for acc in accounts:
-        chat_id = acc.get("chat_id")
-        name = acc.get("name", "Unknown Channel")
-        username = acc.get("username", "")
-        owner = acc.get("owner", "")
+    async with Bot(token=BOT_TOKEN) as bot:
+        for acc in accounts:
+            chat_id = acc.get("chat_id")
+            name = acc.get("name", "Unknown Channel")
+            username = acc.get("username", "")
+            owner = acc.get("owner", "")
 
-        try:
-            # Re-use global bot_instance
-            count = await bot_instance.get_chat_member_count(chat_id=chat_id)
-            total_subs += count
-        except Exception as e:
-            print(f"Failed to fetch count for '{name}' ({chat_id}): {e}")
-            count = "Error"
+            try:
+                count = await bot.get_chat_member_count(chat_id=chat_id)
+                total_subs += count
+            except Exception as e:
+                print(f"Failed to fetch count for '{name}' ({chat_id}): {e}")
+                count = "Error"
 
-        # Format Telegram links safely
-        if username:
-            channel_url = f"https://t.me/{username}"
-        elif str(chat_id).startswith("-100"):
-            channel_url = "#"  # Private channel
-        else:
-            channel_url = f"https://t.me/{str(chat_id).replace('@', '')}"
+            # Format Telegram links safely
+            if username:
+                channel_url = f"https://t.me/{username}"
+            elif str(chat_id).startswith("-100"):
+                channel_url = "#"  # Private channel
+            else:
+                channel_url = f"https://t.me/{str(chat_id).replace('@', '')}"
 
-        owner_url = f"https://t.me/{owner}" if owner else "#"
+            owner_url = f"https://t.me/{owner}" if owner else "#"
 
-        channel_results.append({
-            "name": name,
-            "count": count,
-            "channel_url": channel_url,
-            "owner_url": owner_url
-        })
+            channel_results.append({
+                "name": name,
+                "count": count,
+                "channel_url": channel_url,
+                "owner_url": owner_url
+            })
 
     return channel_results, total_subs, len(accounts)
 
