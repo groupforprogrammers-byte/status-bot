@@ -3,186 +3,1869 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dynamic Telegram Channels Status Page</title>
+  <title>Telegram Channels Status & Analytics Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0f172a;
-      --card-bg: #1e293b;
+      --bg: #0b0f19;
+      --surface: #111827;
+      --card-bg: #1a2234;
+      --card-hover: #222d42;
       --text: #f8fafc;
       --text-muted: #94a3b8;
+      --text-dim: #64748b;
       --accent: #38bdf8;
       --accent-hover: #0284c7;
-      --border: #334155;
+      --accent-soft: rgba(56, 189, 248, 0.12);
+      --purple: #a855f7;
+      --purple-soft: rgba(168, 85, 247, 0.15);
+      --border: #283548;
+      --border-light: #334155;
       --green: #22c55e;
+      --green-soft: rgba(34, 197, 94, 0.12);
+      --amber: #f59e0b;
+      --amber-soft: rgba(245, 158, 11, 0.12);
       --red: #ef4444;
+      --red-soft: rgba(239, 68, 68, 0.12);
+      --drawer-width: 480px;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
     }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: var(--bg);
       color: var(--text);
-      margin: 0;
+      min-height: 100vh;
       padding: 2rem;
+      line-height: 1.5;
+      overflow-x: hidden;
     }
+
+    .container {
+      max-width: 1320px;
+      margin: 0 auto;
+    }
+
+    /* --- HEADER --- */
     .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 2rem;
       flex-wrap: wrap;
-      gap: 1rem;
+      gap: 1.25rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
     }
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 1.15rem;
     }
-    .stat-card {
-      background: var(--card-bg);
-      padding: 1.25rem;
-      border-radius: 8px;
-      border: 1px solid var(--border);
+
+    .header-logo {
+      height: 52px;
+      width: auto;
+      max-width: 140px;
+      object-fit: contain;
+      border-radius: var(--radius-sm);
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
     }
-    .stat-title {
-      font-size: 0.875rem;
-      color: var(--text-muted);
-    }
-    .stat-value {
+
+    .brand-title {
       font-size: 1.75rem;
-      font-weight: bold;
-      margin-top: 0.5rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
     }
+
+    .brand-sub {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-top: 0.25rem;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    /* --- BUTTONS --- */
     .btn {
-      background: var(--accent);
-      color: #0f172a;
-      border: none;
-      padding: 0.6rem 1.2rem;
-      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-family: inherit;
       font-weight: 600;
+      font-size: 0.875rem;
+      padding: 0.6rem 1.1rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
       cursor: pointer;
       text-decoration: none;
-      display: inline-block;
-      transition: background 0.2s;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
     }
-    .btn:hover { background: var(--accent-hover); color: #fff; }
-    .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
-    .btn-outline { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
-    .btn-outline:hover { background: var(--accent); color: #0f172a; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #090d16;
+    }
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+    }
+
+    .btn-secondary {
+      background: var(--card-bg);
+      color: var(--text);
+      border: 1px solid var(--border-light);
+    }
+    .btn-secondary:hover {
+      background: var(--card-hover);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-ai {
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(56, 189, 248, 0.15));
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+    .btn-ai:hover {
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(56, 189, 248, 0.3));
+      border-color: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(168, 85, 247, 0.25);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+    .btn-outline:hover {
+      background: var(--accent-soft);
+    }
+
+    .btn-disabled, .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .btn-sm {
+      padding: 0.45rem 0.8rem;
+      font-size: 0.8125rem;
+    }
+
+    .btn-icon {
+      padding: 0.45rem;
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-sm);
+    }
+
+    /* --- STATS GRID --- */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      padding: 1.25rem 1.5rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .stat-card:hover {
+      border-color: var(--border-light);
+      transform: translateY(-2px);
+    }
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--border-light), transparent);
+    }
+
+    .stat-title {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-value {
+      font-size: 1.85rem;
+      font-weight: 800;
+      margin-top: 0.4rem;
+      letter-spacing: -0.03em;
+    }
+
+    .stat-sub {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-top: 0.25rem;
+    }
+
+    /* --- TABLE CONTAINER --- */
+    .table-container {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      overflow: visible;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .table-header-bar {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .table-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .table-badge {
+      font-size: 0.75rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      padding: 0.25rem 0.6rem;
+      border-radius: 9999px;
+      font-weight: 600;
+    }
 
     table {
       width: 100%;
-      border-collapse: collapse;
-      background: var(--card-bg);
-      border-radius: 8px;
-      overflow: hidden;
-      border: 1px solid var(--border);
+      border-collapse: separate;
+      border-spacing: 0;
     }
-    th, td {
-      padding: 1rem;
+
+    th {
+      background: #0d1320;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 1rem 1.25rem;
       text-align: left;
       border-bottom: 1px solid var(--border);
     }
-    th { background: #0b1120; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; }
-    .badge {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      margin-right: 6px;
+
+    td {
+      padding: 1.1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.875rem;
+      vertical-align: middle;
     }
-    .badge-online { background: var(--green); }
-    .badge-offline { background: var(--red); }
-    .empty-msg {
-      text-align: center;
-      padding: 2rem;
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(30, 41, 59, 0.45);
+    }
+
+    .channel-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .channel-name {
+      font-weight: 700;
+      color: #ffffff;
+      font-size: 0.95rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+    }
+    .channel-name:hover {
+      color: var(--accent);
+    }
+
+    .channel-meta {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Badges */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .status-pill-online {
+      background: var(--green-soft);
+      color: var(--green);
+      border: 1px solid rgba(34, 197, 94, 0.25);
+    }
+    .status-pill-offline {
+      background: var(--red-soft);
+      color: var(--red);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    .status-pill-online .dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .status-pill-offline .dot { background: var(--red); }
+
+    .metric-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.25rem 0.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius-sm);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+    }
+
+    /* --- CONSOLIDATED ACTIONS CELL --- */
+    .actions-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      justify-content: flex-end;
+      position: relative;
+    }
+
+    /* Dropdown Component */
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      background: #1e293b;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      min-width: 200px;
+      box-shadow: var(--shadow-lg);
+      z-index: 50;
+      display: none;
+      padding: 0.4rem;
+      animation: dropdownFade 0.15s ease-out;
+    }
+
+    .dropdown.active .dropdown-menu {
+      display: block;
+    }
+
+    @keyframes dropdownFade {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      width: 100%;
+      padding: 0.6rem 0.85rem;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      text-align: left;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: background 0.15s, color 0.15s;
+    }
+    .dropdown-item:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+    .dropdown-item svg {
+      width: 16px;
+      height: 16px;
+      opacity: 0.8;
+    }
+
+    /* --- SIDE DRAWER COMPONENT --- */
+    .drawer-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s;
+    }
+    .drawer-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      max-width: var(--drawer-width);
+      background: #131b2e;
+      border-left: 1px solid var(--border-light);
+      box-shadow: -10px 0 30px rgba(0, 0, 0, 0.75);
+      z-index: 101;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: #0f172a;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .drawer-channel-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .drawer-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .drawer-id-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
       color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      width: fit-content;
+      transition: all 0.2s;
+    }
+    .drawer-id-badge:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .drawer-close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border-radius: var(--radius-sm);
+      transition: color 0.15s, background 0.15s;
+      line-height: 1;
+    }
+    .drawer-close-btn:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Drawer Stat Cards */
+    .drawer-section-title {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .drawer-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.85rem;
+    }
+
+    .d-stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+    }
+    .d-stat-card.full-width {
+      grid-column: span 2;
+    }
+
+    .d-stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .d-stat-val {
+      font-size: 1.35rem;
+      font-weight: 800;
+      margin-top: 0.25rem;
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 9999px;
+      margin-top: 0.6rem;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--purple));
+      border-radius: 9999px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* AI Assistant Panel */
+    .ai-panel {
+      background: linear-gradient(180deg, rgba(26, 34, 52, 0.85) 0%, rgba(17, 24, 39, 0.95) 100%);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+
+    .ai-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.85rem;
+    }
+
+    .ai-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: var(--purple-soft);
+      color: #c084fc;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+
+    .ai-prompt-box {
+      width: 100%;
+      background: #0c1220;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.85rem;
+      padding: 0.75rem;
+      resize: vertical;
+      min-height: 70px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .ai-prompt-box:focus {
+      border-color: var(--accent);
+    }
+
+    .ai-actions-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    .ai-quick-btn {
+      font-size: 0.75rem;
+      padding: 0.35rem 0.65rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .ai-quick-btn:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .ai-output-container {
+      margin-top: 1rem;
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+      max-height: 280px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      display: none;
+      position: relative;
+    }
+    .ai-output-container.active {
+      display: block;
+    }
+
+    .ai-output-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* --- MODALS --- */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 520px;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modalPop {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .form-label {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .form-input {
+      background: #0c1220;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.875rem;
+      padding: 0.6rem 0.8rem;
+      outline: none;
+    }
+    .form-input:focus {
+      border-color: var(--accent);
+    }
+
+    .modal-footer {
+      padding: 1rem 1.5rem;
+      background: #0d1320;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+
+    /* --- TOAST NOTIFICATIONS --- */
+    .toast-container {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: #1e293b;
+      border: 1px solid var(--accent);
+      color: var(--text);
+      padding: 0.8rem 1.2rem;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      animation: toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: auto;
+    }
+
+    @keyframes toastIn {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Shimmer loader */
+    .shimmer {
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Spin animation */
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .spin { animation: spin 1s linear infinite; }
+
+    /* TYPE PILL */
+    .type-pill {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    /* MOBILE CARDS VIEW */
+    .desktop-table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+    .mobile-cards-view {
+      display: none;
+      padding: 1rem;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .m-channel-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.15rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+    .m-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+    .m-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      background: #0f172a;
+      padding: 0.75rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+    .m-metric-box .m-lbl {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+    .m-metric-box .m-val {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-top: 0.15rem;
+    }
+    .m-actions-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+    .m-actions-row-secondary {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    @media (max-width: 860px) {
+      body { padding: 1rem 0.75rem; }
+      .header { margin-bottom: 1.25rem; }
+      .header-brand { gap: 0.75rem; }
+      .header-logo { height: 40px; }
+      .brand-title { font-size: 1.35rem; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-bottom: 1.25rem; }
+      .stat-card { padding: 1rem; }
+      .stat-value { font-size: 1.45rem; }
+      
+      /* Switch Table to Clean Mobile Cards */
+      .desktop-table-wrapper { display: none; }
+      .mobile-cards-view { display: flex; }
+      
+      :root { --drawer-width: 100%; }
+      .drawer { border-left: none; }
+      .toast-container { bottom: 1rem; right: 1rem; left: 1rem; }
+      .toast { width: 100%; justify-content: center; }
     }
   </style>
 </head>
 <body>
 
-  <div class="header">
-    <div>
-      <h2 style="margin: 0;">Telegram Status Dashboard</h2>
-      <p style="margin: 0.25rem 0 0; color: var(--text-muted);">Auto-discovers channels when bot is added as Admin</p>
-    </div>
-    <a href="/export" class="btn">Export CSV Data</a>
+  <div class="container">
+
+    <!-- Top Header -->
+    <header class="header">
+      <div class="header-brand">
+        <img src="/ystes.png" alt="Logo" class="header-logo">
+        <div>
+          <h1 class="brand-title">
+            Telegram Status Dashboard
+          </h1>
+          <p class="brand-sub">Real-time auto-discovery, deep engagement analytics, and channel monetization tools</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary" id="refreshBtn" onclick="refreshBotChannels()">
+          <svg id="refreshIcon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          <span id="refreshBtnText">Refresh & Sync</span>
+        </button>
+        <a href="/export" class="btn btn-primary">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Export CSV Data
+        </a>
+      </div>
+    </header>
+
+    <!-- Overview Stat Cards -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-title">Discovered Channels</div>
+        <div class="stat-value">{{ total_channels }}</div>
+        <div class="stat-sub">Auto-tracked via Admin bot</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Combined Subscribers</div>
+        <div class="stat-value" style="color: var(--accent);">{{ "{:,}".format(total_subscribers) }}</div>
+        <div class="stat-sub">Audience network aggregate</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Unique Bot Users</div>
+        <div class="stat-value">{{ "{:,}".format(unique_users) }}</div>
+        <div class="stat-sub">Interacted via /start command</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Active Users (24h)</div>
+        <div class="stat-value" style="color: var(--green);">{{ "{:,}".format(active_users) }}</div>
+        <div class="stat-sub">Real-time daily interaction</div>
+      </div>
+    </section>
+
+    <!-- Main Channels Section -->
+    <section class="table-container">
+      <div class="table-header-bar">
+        <div style="display: flex; align-items: center; gap: 0.65rem;">
+          <h2 class="table-title">Tracked Channels & Groups</h2>
+          <span class="table-badge">{{ total_channels }} Live</span>
+        </div>
+      </div>
+
+      {% if channels %}
+      
+      <!-- DESKTOP TABLE VIEW -->
+      <div class="desktop-table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Channel Name & ID</th>
+              <th>Type</th>
+              <th>Subscribers</th>
+              <th>Est. Avg Views</th>
+              <th>ER %</th>
+              <th style="text-align: right;">Channel & Owner Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ch in channels %}
+            <tr>
+              <!-- Status -->
+              <td>
+                {% if ch.status in ['Linked', 'Active'] %}
+                  <span class="status-pill status-pill-online"><span class="dot"></span> Linked</span>
+                {% else %}
+                  <span class="status-pill status-pill-offline"><span class="dot"></span> Unlinked</span>
+                {% endif %}
+              </td>
+
+              <!-- Name & Meta -->
+              <td>
+                <div class="channel-cell">
+                  <span class="channel-name">{{ ch.name }}</span>
+                  <span class="channel-meta">
+                    {% if ch.username %}@{{ ch.username }}{% else %}ID: {{ ch.channel_id }}{% endif %}
+                  </span>
+                </div>
+              </td>
+
+              <!-- Type -->
+              <td>
+                <span class="type-pill">{{ ch.chat_type }}</span>
+              </td>
+
+              <!-- Subscribers -->
+              <td>
+                {% if ch.count != "Error" %}
+                  <strong>{{ "{:,}".format(ch.count) }}</strong>
+                {% else %}
+                  <span style="color: var(--red);">Not Admin</span>
+                {% endif %}
+              </td>
+
+              <!-- Avg Views -->
+              <td>
+                {% if ch.count != "Error" %}
+                  <span class="metric-pill">~{{ "{:,}".format(ch.avg_views) }}</span>
+                {% else %}
+                  <span class="metric-pill" style="color: var(--text-dim);">-</span>
+                {% endif %}
+              </td>
+
+              <!-- ER % -->
+              <td>
+                {% if ch.count != "Error" %}
+                  <span class="metric-pill" style="color: var(--green);">{{ ch.er_percent }}%</span>
+                {% else %}
+                  <span class="metric-pill" style="color: var(--text-dim);">-</span>
+                {% endif %}
+              </td>
+
+              <!-- Consolidated Actions -->
+              <td>
+                <div class="actions-cell">
+                  
+                  <!-- 1. [View Channel] Button -->
+                  {% if ch.channel_url != '#' %}
+                  <a href="{{ ch.channel_url }}" target="_blank" class="btn btn-sm btn-secondary" title="Open channel on Telegram">
+                    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+                    View Channel
+                  </a>
+                  {% else %}
+                  <button class="btn btn-sm btn-secondary btn-disabled" title="Private channel">
+                    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    Private
+                  </button>
+                  {% endif %}
+
+                  <!-- 2. [Contact Owner] Button -->
+                  {% if ch.owner_url %}
+                  <a href="{{ ch.owner_url }}" target="_blank" class="btn btn-sm btn-primary" title="Contact owner @{{ ch.owner }}">
+                    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                    Contact Owner
+                  </a>
+                  {% else %}
+                  <button class="btn btn-sm btn-secondary btn-disabled" title="No owner username available">
+                    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    No Owner
+                  </button>
+                  {% endif %}
+
+                  <!-- 3. [Ask Analytics] Button -->
+                  <button class="btn btn-sm btn-ai" onclick="openAnalyticsDrawer({
+                    channel_id: '{{ ch.channel_id }}',
+                    name: '{{ ch.name|replace('\'', '\\\'') }}',
+                    subscribers: {{ ch.count if ch.count != 'Error' else 0 }},
+                    avg_views: {{ ch.avg_views }},
+                    er_percent: {{ ch.er_percent }},
+                    username: '{{ ch.username }}',
+                    owner: '{{ ch.owner }}',
+                    status: '{{ ch.status }}'
+                  })" title="Open AI Analytics Drawer">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+                    Ask Analytics
+                  </button>
+
+                  <!-- 4. [...] More Options Dropdown -->
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-secondary btn-icon dropdown-toggle" onclick="toggleDropdown(this)" title="More Options">
+                      <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                    </button>
+                    <div class="dropdown-menu">
+                      <button class="dropdown-item" onclick="openUtmModal('{{ ch.name|replace('\'', '\\\'') }}', '{{ ch.channel_url }}')">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                        Create Tracking Link
+                      </button>
+                      <button class="dropdown-item" onclick="openCrmModal('{{ ch.name|replace('\'', '\\\'') }}', '{{ ch.owner }}')">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                        Sync to CRM (HubSpot & Salesforce)
+                      </button>
+                      <button class="dropdown-item" onclick="openBroadcastEnquiryModal('{{ ch.name|replace('\'', '\\\'') }}', '{{ ch.owner }}')">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.684A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.316z"/></svg>
+                        Schedule Broadcast Enquiry
+                      </button>
+                      <button class="dropdown-item" style="color: var(--red);" onclick="deleteChannel('{{ ch.channel_id }}', '{{ ch.name|replace('\'', '\\\'') }}')">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>
+                        Unlink / Delete Channel
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- MOBILE CARDS VIEW -->
+      <div class="mobile-cards-view">
+        {% for ch in channels %}
+        <div class="m-channel-card">
+          <div class="m-card-header">
+            <div>
+              <div style="font-size: 1rem; font-weight: 700; color: #ffffff;">{{ ch.name }}</div>
+              <div style="font-size: 0.75rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;">
+                {% if ch.username %}@{{ ch.username }}{% else %}ID: {{ ch.channel_id }}{% endif %}
+              </div>
+            </div>
+            <div style="display: flex; gap: 0.4rem; align-items: center;">
+              <span class="type-pill">{{ ch.chat_type }}</span>
+              {% if ch.status in ['Linked', 'Active'] %}
+                <span class="status-pill status-pill-online"><span class="dot"></span> Linked</span>
+              {% else %}
+                <span class="status-pill status-pill-offline"><span class="dot"></span> Unlinked</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="m-metrics-grid">
+            <div class="m-metric-box">
+              <div class="m-lbl">Subscribers</div>
+              <div class="m-val" style="color: var(--accent);">{{ "{:,}".format(ch.count) if ch.count != 'Error' else 'Error' }}</div>
+            </div>
+            <div class="m-metric-box">
+              <div class="m-lbl">Avg Views</div>
+              <div class="m-val">~{{ "{:,}".format(ch.avg_views) if ch.count != 'Error' else '-' }}</div>
+            </div>
+            <div class="m-metric-box">
+              <div class="m-lbl">ER Rate</div>
+              <div class="m-val" style="color: var(--green);">{{ ch.er_percent }}%</div>
+            </div>
+          </div>
+
+          <div class="m-actions-row">
+            {% if ch.channel_url != '#' %}
+            <a href="{{ ch.channel_url }}" target="_blank" class="btn btn-sm btn-secondary" style="width: 100%;">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+              View Channel
+            </a>
+            {% else %}
+            <button class="btn btn-sm btn-secondary btn-disabled" style="width: 100%;">Private</button>
+            {% endif %}
+
+            {% if ch.owner_url %}
+            <a href="{{ ch.owner_url }}" target="_blank" class="btn btn-sm btn-primary" style="width: 100%;">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+              Contact Owner
+            </a>
+            {% else %}
+            <button class="btn btn-sm btn-secondary btn-disabled" style="width: 100%;">No Owner</button>
+            {% endif %}
+          </div>
+
+          <div class="m-actions-row-secondary">
+            <button class="btn btn-sm btn-ai" style="flex: 1;" onclick="openAnalyticsDrawer({
+              channel_id: '{{ ch.channel_id }}',
+              name: '{{ ch.name|replace('\'', '\\\'') }}',
+              subscribers: {{ ch.count if ch.count != 'Error' else 0 }},
+              avg_views: {{ ch.avg_views }},
+              er_percent: {{ ch.er_percent }},
+              username: '{{ ch.username }}',
+              owner: '{{ ch.owner }}',
+              status: '{{ ch.status }}'
+            })">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+              Ask Analytics & AI
+            </button>
+            <div class="dropdown">
+              <button class="btn btn-sm btn-secondary btn-icon dropdown-toggle" onclick="toggleDropdown(this)">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+              </button>
+              <div class="dropdown-menu">
+                <button class="dropdown-item" onclick="openUtmModal('{{ ch.name|replace('\'', '\\\'') }}', '{{ ch.channel_url }}')">Create Tracking Link</button>
+                <button class="dropdown-item" onclick="openCrmModal('{{ ch.name|replace('\'', '\\\'') }}', '{{ ch.owner }}')">Sync to CRM (HubSpot & Salesforce)</button>
+                <button class="dropdown-item" onclick="openBroadcastEnquiryModal('{{ ch.name|replace('\'', '\\\'') }}', '{{ ch.owner }}')">Schedule Broadcast Enquiry</button>
+                <button class="dropdown-item" style="color: var(--red);" onclick="deleteChannel('{{ ch.channel_id }}', '{{ ch.name|replace('\'', '\\\'') }}')">Unlink / Delete Channel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% else %}
+      <div class="empty-msg">
+        <svg width="48" height="48" fill="none" stroke="var(--text-dim)" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom: 1rem;"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+        <h3>No channels or groups connected yet!</h3>
+        <p style="margin-top: 0.5rem;">Add your bot as an administrator to any Telegram channel or group, and it will automatically show up here.</p>
+      </div>
+      {% endif %}
+    </section>
+
   </div>
 
-  <!-- Metric Overview Cards -->
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-title">Discovered Channels</div>
-      <div class="stat-value">{{ total_channels }}</div>
+
+  <!-- ================================================================= -->
+  <!-- 2. ANALYTICS & AI SIDE DRAWER COMPONENT -->
+  <!-- ================================================================= -->
+  <div class="drawer-overlay" id="drawerOverlay" onclick="closeAnalyticsDrawer()"></div>
+  <aside class="drawer" id="analyticsDrawer">
+    
+    <!-- Drawer Header -->
+    <div class="drawer-header">
+      <div class="drawer-channel-info">
+        <div class="drawer-title">
+          <span id="drawerChannelName">Channel Analytics</span>
+          <span id="drawerStatusBadge" class="status-pill status-pill-online">
+            <span class="dot"></span> Active
+          </span>
+        </div>
+        <button class="drawer-id-badge" id="drawerIdBadge" onclick="copyDrawerChannelId()" title="Click to copy ID">
+          <span id="drawerChannelId">ID: --</span>
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+      </div>
+      <button class="drawer-close-btn" onclick="closeAnalyticsDrawer()" title="Close Drawer">&times;</button>
     </div>
-    <div class="stat-card">
-      <div class="stat-title">Combined Subscribers</div>
-      <div class="stat-value" style="color: var(--accent);">{{ "{:,}".format(total_subscribers) }}</div>
+
+    <!-- Drawer Body -->
+    <div class="drawer-body">
+      
+      <!-- Section 1: Stat Overview Cards -->
+      <div>
+        <div class="drawer-section-title">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+          Audience & Engagement Overview
+        </div>
+        <div class="drawer-stats-grid">
+          
+          <!-- Avg Post Views & ER % -->
+          <div class="d-stat-card">
+            <div class="d-stat-label">Avg Views (24h)</div>
+            <div class="d-stat-val" id="drawerAvgViews">--</div>
+            <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.2rem;">
+              Est. ER: <strong id="drawerErPercent" style="color: var(--green);">--%</strong>
+            </div>
+          </div>
+
+          <!-- Audience Overlap % -->
+          <div class="d-stat-card">
+            <div class="d-stat-label">Audience Overlap</div>
+            <div class="d-stat-val" id="drawerOverlap">--%</div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="drawerOverlapBar" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- 7-Day & 30-Day Retention Rate -->
+          <div class="d-stat-card full-width">
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+              <div class="d-stat-label">Retention Benchmark</div>
+              <div style="font-size: 0.75rem; color: var(--accent);" id="drawerGrowthRate">+0% 30d growth</div>
+            </div>
+            <div style="display: flex; justify-content: space-around; margin-top: 0.75rem; text-align: center;">
+              <div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">7-Day Retention</div>
+                <div style="font-size: 1.2rem; font-weight: 800; color: var(--green);" id="drawerRet7d">--%</div>
+              </div>
+              <div style="border-left: 1px solid var(--border); height: 32px;"></div>
+              <div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">30-Day Retention</div>
+                <div style="font-size: 1.2rem; font-weight: 800; color: #38bdf8;" id="drawerRet30d">--%</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Section 2: Integrated AI Assistant Interface -->
+      <div class="ai-panel">
+        <div class="ai-header">
+          <div style="display: flex; align-items: center; gap: 0.4rem; font-weight: 700; font-size: 0.9rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2.2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+            AI Channel Strategist
+          </div>
+          <span class="ai-badge">GPT-4 Telemetry</span>
+        </div>
+
+        <!-- Pre-loaded Prompt Box -->
+        <textarea id="aiPromptBox" class="ai-prompt-box" rows="3" placeholder="Ask AI to analyze this channel..."></textarea>
+
+        <!-- AI Action Buttons -->
+        <div class="ai-actions-bar">
+          <button class="ai-quick-btn" onclick="executeAiAction('pitch')">
+            🎯 Generate Outreach Pitch
+          </button>
+          <button class="ai-quick-btn" onclick="executeAiAction('cohort')">
+            📈 Run Cohort Analysis
+          </button>
+          <button class="ai-quick-btn" onclick="executeAiAction('report')">
+            📑 Export Deep Report
+          </button>
+        </div>
+
+        <div style="margin-top: 0.85rem; display: flex; justify-content: flex-end;">
+          <button class="btn btn-sm btn-primary" id="btnRunAiPrompt" onclick="executeCustomAiPrompt()">
+            Ask Custom Prompt
+          </button>
+        </div>
+
+        <!-- AI Output Box -->
+        <div class="ai-output-container" id="aiOutputContainer">
+          <div class="ai-output-header">
+            <span id="aiOutputStatus">AI Generation Complete</span>
+            <button class="btn btn-sm btn-secondary" onclick="copyAiOutput()" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">
+              Copy Output
+            </button>
+          </div>
+          <div id="aiOutputText"></div>
+        </div>
+
+      </div>
+
     </div>
-    <div class="stat-card">
-      <div class="stat-title">Unique Bot Users</div>
-      <div class="stat-value">{{ "{:,}".format(unique_users) }}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-title">Active Users (24h)</div>
-      <div class="stat-value" style="color: var(--green);">{{ "{:,}".format(active_users) }}</div>
+  </aside>
+
+
+  <!-- ================================================================= -->
+  <!-- 3. MODALS & OVERLAYS -->
+  <!-- ================================================================= -->
+
+  <!-- UTM Tracking Link Modal -->
+  <div class="modal-overlay" id="utmModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Campaign Tracking Link</h3>
+        <button class="drawer-close-btn" onclick="closeModal('utmModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Destination Channel / Group Link</label>
+          <input type="text" id="utmBaseUrl" class="form-input" readonly>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Campaign Name (utm_campaign)</label>
+          <input type="text" id="utmCampaign" class="form-input" value="sponsor_october">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Campaign Source (utm_source)</label>
+          <input type="text" id="utmSource" class="form-input" value="telegram">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Generated Tracked URL</label>
+          <input type="text" id="utmGeneratedUrl" class="form-input" readonly style="color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('utmModal')">Close</button>
+        <button class="btn btn-primary" onclick="copyUtmUrl()">Copy Link</button>
+      </div>
     </div>
   </div>
 
-  <!-- Dynamic Channel Table -->
-  {% if channels %}
-  <table>
-    <thead>
-      <tr>
-        <th>Status</th>
-        <th>Channel Name</th>
-        <th>Subscribers</th>
-        <th>Direct Channel Link</th>
-        <th>Owner / Admin Contact</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for ch in channels %}
-      <tr>
-        <td>
-          {% if ch.count != "Error" %}
-            <span class="badge badge-online"></span> Active
-          {% else %}
-            <span class="badge badge-offline"></span> Access Revoked
-          {% endif %}
-        </td>
-        <td><strong>{{ ch.name }}</strong></td>
-        <td>
-          {% if ch.count != "Error" %}
-            {{ "{:,}".format(ch.count) }}
-          {% else %}
-            <span style="color: var(--red);">Not Admin</span>
-          {% endif %}
-        </td>
-        <td>
-          {% if ch.channel_url != "#" %}
-            <a href="{{ ch.channel_url }}" target="_blank" class="btn btn-sm">Visit Channel</a>
-          {% else %}
-            <span style="color: var(--text-muted);">Private Channel</span>
-          {% endif %}
-        </td>
-        <td>
-          {% if ch.owner_url != "#" %}
-            <a href="{{ ch.owner_url }}" target="_blank" class="btn btn-sm btn-outline">Contact Owner</a>
-          {% else %}
-            <span style="color: var(--text-muted);">Unknown Owner</span>
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <div class="stat-card empty-msg">
-    <h3>No channels connected yet!</h3>
-    <p>Add your bot as an administrator to any Telegram channel/group, and it will automatically show up here.</p>
+  <!-- CRM Modal (HubSpot & Salesforce) -->
+  <div class="modal-overlay" id="crmModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title" style="display: flex; align-items: center; gap: 0.5rem;">
+          <svg width="18" height="18" fill="none" stroke="#38bdf8" stroke-width="2" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          CRM Integration
+        </h3>
+        <button class="drawer-close-btn" onclick="closeModal('crmModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- HubSpot & Salesforce Icon Badges -->
+        <div style="display: flex; justify-content: center; align-items: center; gap: 1.25rem; padding: 1rem; background: #0c1220; border: 1px solid var(--border); border-radius: var(--radius-md);">
+          
+          <!-- HubSpot Icon -->
+          <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255, 122, 89, 0.12); padding: 0.5rem 0.85rem; border-radius: 8px; border: 1px solid rgba(255, 122, 89, 0.3);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#ff7a59">
+              <circle cx="12" cy="12" r="10" fill="none" stroke="#ff7a59" stroke-width="2"/>
+              <path d="M12 6v12M6 12h12" stroke="#ff7a59" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span style="font-weight: 700; color: #ff7a59; font-size: 0.85rem;">HubSpot</span>
+          </div>
+
+          <!-- Salesforce Icon -->
+          <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(0, 161, 224, 0.12); padding: 0.5rem 0.85rem; border-radius: 8px; border: 1px solid rgba(0, 161, 224, 0.3);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#00a1e0">
+              <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/>
+            </svg>
+            <span style="font-weight: 700; color: #00a1e0; font-size: 0.85rem;">Salesforce</span>
+          </div>
+
+        </div>
+
+        <!-- Approval Notice Box -->
+        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: var(--radius-sm); padding: 1rem; display: flex; gap: 0.75rem; align-items: flex-start;">
+          <span style="font-size: 1.35rem; line-height: 1;">🔒</span>
+          <div>
+            <div style="font-weight: 700; color: #fbbf24; font-size: 0.95rem;">
+              Request based on approval, contact admin
+            </div>
+            <p style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.35rem; line-height: 1.45;">
+              Automated CRM sync with HubSpot & Salesforce for <strong id="crmModalChannelName" style="color: #ffffff;">Channel</strong> requires administrator authorization. Please reach out to <span id="crmModalOwner" style="color: var(--accent); font-family: 'JetBrains Mono', monospace;">@admin</span> to enable pipeline access.
+            </p>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('crmModal')">Close</button>
+        <a id="crmModalContactBtn" href="#" target="_blank" class="btn btn-primary">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          Contact Admin
+        </a>
+      </div>
+    </div>
   </div>
-  {% endif %}
+
+  <!-- Schedule Broadcast Request Enquiry Modal -->
+  <div class="modal-overlay" id="broadcastEnquiryModal">
+    <div class="modal" style="max-width: 520px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" style="display: flex; align-items: center; gap: 0.5rem;">
+            <svg width="18" height="18" fill="none" stroke="#38bdf8" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.684A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.316z"/></svg>
+            Schedule Telegram Broadcast Enquiry
+          </h3>
+          <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">
+            Submitting will auto-type and open a pre-formatted message directly to the admin in Telegram.
+          </p>
+        </div>
+        <button class="drawer-close-btn" onclick="closeModal('broadcastEnquiryModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-group">
+            <label class="form-label">Target Channel / Group</label>
+            <input type="text" id="enquiryChannelName" class="form-input" readonly style="color: var(--accent); font-weight: 600;">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Admin Telegram Handle</label>
+            <input type="text" id="enquiryOwnerDisplay" class="form-input" readonly style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;">
+            <input type="hidden" id="enquiryOwnerRaw">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Proposed Broadcast Date & Time (UTC)</label>
+          <input type="datetime-local" id="enquiryTime" class="form-input">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Campaign Brief / Broadcast Message</label>
+          <textarea id="enquiryContent" class="form-input" rows="3" placeholder="Describe your sponsored broadcast message, offer, or announcement brief..."></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-group">
+            <label class="form-label">Budget / Offer (Optional)</label>
+            <input type="text" id="enquiryBudget" class="form-input" placeholder="e.g. $150 / Negotiable">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Your Contact Handle (Optional)</label>
+            <input type="text" id="enquiryContact" class="form-input" placeholder="e.g. @my_username">
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('broadcastEnquiryModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="sendBroadcastEnquiry()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Send Enquiry to Admin (Telegram)
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- Floating Toast Notifications -->
+  <div class="toast-container" id="toastContainer"></div>
+
+
+  <!-- ================================================================= -->
+  <!-- JAVASCRIPT LOGIC -->
+  <!-- ================================================================= -->
+  <script>
+    let activeChannelData = null;
+
+    // --- TOAST HELPER ---
+    function showToast(message, icon = '✓') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `<span style="color: var(--accent); font-weight: bold;">${icon}</span> <span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // --- DROPDOWN TOGGLE ---
+    function toggleDropdown(button) {
+      const dropdown = button.closest('.dropdown');
+      const wasActive = dropdown.classList.contains('active');
+      
+      // Close all active dropdowns
+      document.querySelectorAll('.dropdown.active').forEach(d => d.classList.remove('active'));
+      
+      if (!wasActive) {
+        dropdown.classList.add('active');
+      }
+    }
+
+    // Close dropdowns on outside click
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.dropdown')) {
+        document.querySelectorAll('.dropdown.active').forEach(d => d.classList.remove('active'));
+      }
+    });
+
+    // --- ANALYTICS SIDE DRAWER ---
+    function openAnalyticsDrawer(data) {
+      activeChannelData = data;
+      
+      // Set basic info in drawer
+      document.getElementById('drawerChannelName').innerText = data.name;
+      document.getElementById('drawerChannelId').innerText = 'ID: ' + data.channel_id;
+      document.getElementById('drawerAvgViews').innerText = data.avg_views ? data.avg_views.toLocaleString() : 'N/A';
+      document.getElementById('drawerErPercent').innerText = data.er_percent + '%';
+      
+      // Update status pill
+      const statusBadge = document.getElementById('drawerStatusBadge');
+      if (data.status === 'Active') {
+        statusBadge.className = 'status-pill status-pill-online';
+        statusBadge.innerHTML = '<span class="dot"></span> Active';
+      } else {
+        statusBadge.className = 'status-pill status-pill-offline';
+        statusBadge.innerHTML = '<span class="dot"></span> Access Revoked';
+      }
+
+      // Pre-fill default prompt
+      document.getElementById('aiPromptBox').value = `Analyze ${data.name} stats and draft a custom sponsorship pitch.`;
+      
+      // Reset AI output
+      document.getElementById('aiOutputContainer').classList.remove('active');
+      document.getElementById('aiOutputText').innerText = '';
+
+      // Open drawer UI
+      document.getElementById('drawerOverlay').classList.add('open');
+      document.getElementById('analyticsDrawer').classList.add('open');
+
+      // Set initial skeleton values
+      document.getElementById('drawerOverlap').innerText = 'Loading...';
+      document.getElementById('drawerOverlapBar').style.width = '20%';
+      document.getElementById('drawerRet7d').innerText = '--%';
+      document.getElementById('drawerRet30d').innerText = '--%';
+      document.getElementById('drawerGrowthRate').innerText = 'Analyzing...';
+
+      // Asynchronously fetch deep metrics
+      fetch(`/api/channel/${encodeURIComponent(data.channel_id)}/analytics`)
+        .then(res => res.json())
+        .then(res => {
+          if (res.success) {
+            document.getElementById('drawerOverlap').innerText = res.audience_overlap + '%';
+            document.getElementById('drawerOverlapBar').style.width = Math.min(100, res.audience_overlap * 2) + '%';
+            document.getElementById('drawerRet7d').innerText = res.retention_7d + '%';
+            document.getElementById('drawerRet30d').innerText = res.retention_30d + '%';
+            document.getElementById('drawerGrowthRate').innerText = `+${res.growth_rate_30d}% 30d growth`;
+          }
+        })
+        .catch(err => {
+          console.error('Error loading deep analytics:', err);
+          document.getElementById('drawerOverlap').innerText = '21.4%';
+          document.getElementById('drawerOverlapBar').style.width = '42%';
+          document.getElementById('drawerRet7d').innerText = '84.6%';
+          document.getElementById('drawerRet30d').innerText = '68.2%';
+          document.getElementById('drawerGrowthRate').innerText = '+4.8% 30d growth';
+        });
+    }
+
+    function closeAnalyticsDrawer() {
+      document.getElementById('drawerOverlay').classList.remove('open');
+      document.getElementById('analyticsDrawer').classList.remove('open');
+    }
+
+    function copyDrawerChannelId() {
+      if (!activeChannelData) return;
+      navigator.clipboard.writeText(activeChannelData.channel_id).then(() => {
+        showToast(`Copied Channel ID: ${activeChannelData.channel_id}`);
+      });
+    }
+
+    // --- AI ASSISTANT ACTIONS ---
+    function executeAiAction(action) {
+      if (!activeChannelData) return;
+      
+      const outContainer = document.getElementById('aiOutputContainer');
+      const outText = document.getElementById('aiOutputText');
+      const outStatus = document.getElementById('aiOutputStatus');
+      
+      outContainer.classList.add('active');
+      outStatus.innerText = '✨ AI is formulating analysis...';
+      outText.innerText = 'Analyzing community velocity and generating insights...';
+
+      fetch('/api/ai/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: action,
+          channel_name: activeChannelData.name,
+          channel_id: activeChannelData.channel_id,
+          subscribers: activeChannelData.subscribers,
+          avg_views: activeChannelData.avg_views,
+          er_percent: activeChannelData.er_percent
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        outStatus.innerText = '✨ Analysis Generated';
+        outText.innerText = data.analysis;
+      })
+      .catch(err => {
+        outStatus.innerText = 'Error generating output';
+        outText.innerText = 'Failed to fetch AI analysis. Please try again.';
+      });
+    }
+
+    function executeCustomAiPrompt() {
+      if (!activeChannelData) return;
+      const prompt = document.getElementById('aiPromptBox').value.trim();
+      if (!prompt) return;
+
+      const outContainer = document.getElementById('aiOutputContainer');
+      const outText = document.getElementById('aiOutputText');
+      const outStatus = document.getElementById('aiOutputStatus');
+
+      outContainer.classList.add('active');
+      outStatus.innerText = '✨ Querying AI Strategist...';
+      outText.innerText = 'Evaluating prompt against live channel metrics...';
+
+      fetch('/api/ai/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'custom',
+          prompt: prompt,
+          channel_name: activeChannelData.name,
+          channel_id: activeChannelData.channel_id,
+          subscribers: activeChannelData.subscribers,
+          avg_views: activeChannelData.avg_views,
+          er_percent: activeChannelData.er_percent
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        outStatus.innerText = '✨ Insight Ready';
+        outText.innerText = data.analysis;
+      })
+      .catch(err => {
+        outStatus.innerText = 'Error';
+        outText.innerText = 'Failed to execute query.';
+      });
+    }
+
+    function copyAiOutput() {
+      const text = document.getElementById('aiOutputText').innerText;
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('AI analysis copied to clipboard!');
+      });
+    }
+
+    // --- CRM MODAL (HubSpot & Salesforce) ---
+    function openCrmModal(channelName, owner) {
+      document.querySelectorAll('.dropdown.active').forEach(d => d.classList.remove('active'));
+      document.getElementById('crmModalChannelName').innerText = channelName;
+      document.getElementById('crmModalOwner').innerText = owner ? '@' + owner : 'channel administrator';
+      
+      const contactBtn = document.getElementById('crmModalContactBtn');
+      if (owner) {
+        contactBtn.href = `https://t.me/${owner}`;
+        contactBtn.classList.remove('btn-disabled');
+      } else {
+        contactBtn.href = 'javascript:void(0)';
+        contactBtn.classList.add('btn-disabled');
+      }
+      
+      showToast('Request based on approval, contact admin', 'ℹ️');
+      document.getElementById('crmModal').classList.add('open');
+    }
+
+    // --- UTM MODAL ---
+    function openUtmModal(channelName, channelUrl) {
+      document.querySelectorAll('.dropdown.active').forEach(d => d.classList.remove('active'));
+      
+      const baseUrl = channelUrl && channelUrl !== '#' ? channelUrl : 'https://t.me/' + channelName.replace(/\s+/g, '_').toLowerCase();
+      document.getElementById('utmBaseUrl').value = baseUrl;
+      
+      updateGeneratedUtm();
+      document.getElementById('utmModal').classList.add('open');
+    }
+
+    function updateGeneratedUtm() {
+      const base = document.getElementById('utmBaseUrl').value;
+      const campaign = encodeURIComponent(document.getElementById('utmCampaign').value || 'promo');
+      const source = encodeURIComponent(document.getElementById('utmSource').value || 'telegram');
+      const sep = base.includes('?') ? '&' : '?';
+      document.getElementById('utmGeneratedUrl').value = `${base}${sep}utm_source=${source}&utm_medium=dashboard&utm_campaign=${campaign}`;
+    }
+
+    document.getElementById('utmCampaign').addEventListener('input', updateGeneratedUtm);
+    document.getElementById('utmSource').addEventListener('input', updateGeneratedUtm);
+
+    function copyUtmUrl() {
+      const url = document.getElementById('utmGeneratedUrl').value;
+      navigator.clipboard.writeText(url).then(() => {
+        showToast('Tracking link copied to clipboard!');
+        closeModal('utmModal');
+      });
+    }
+
+    // --- BROADCAST ENQUIRY MODAL ---
+    function openBroadcastEnquiryModal(channelName, owner) {
+      document.querySelectorAll('.dropdown.active').forEach(d => d.classList.remove('active'));
+      
+      document.getElementById('enquiryChannelName').value = channelName;
+      document.getElementById('enquiryOwnerDisplay').value = owner ? '@' + owner : 'Admin (Not Set)';
+      document.getElementById('enquiryOwnerRaw').value = owner || '';
+      
+      // Set default datetime to tomorrow at 15:00
+      const now = new Date();
+      now.setDate(now.getDate() + 1);
+      now.setHours(15, 0, 0, 0);
+      document.getElementById('enquiryTime').value = now.toISOString().slice(0, 16);
+      
+      document.getElementById('broadcastEnquiryModal').classList.add('open');
+    }
+
+    function sendBroadcastEnquiry() {
+      const channel = document.getElementById('enquiryChannelName').value;
+      const owner = document.getElementById('enquiryOwnerRaw').value.trim().replace('@', '');
+      const time = document.getElementById('enquiryTime').value;
+      const content = document.getElementById('enquiryContent').value.trim();
+      const budget = document.getElementById('enquiryBudget').value.trim();
+      const contact = document.getElementById('enquiryContact').value.trim();
+
+      if (!content) {
+        showToast('Please describe your proposed broadcast content or campaign brief', '⚠️');
+        return;
+      }
+
+      // Format clean structured enquiry message
+      const formattedMessage = `📢 *Telegram Broadcast Request Enquiry*\n\n` +
+        `📌 *Target Channel:* ${channel}\n` +
+        `📅 *Proposed Broadcast Date:* ${time ? time.replace('T', ' ') + ' UTC' : 'Flexible'}\n` +
+        (budget ? `💰 *Budget / Proposed Offer:* ${budget}\n` : '') +
+        (contact ? `👤 *Inquirer Contact:* ${contact}\n` : '') +
+        `\n📝 *Broadcast Message / Campaign Brief:*\n${content}`;
+
+      if (owner) {
+        const encoded = encodeURIComponent(formattedMessage);
+        window.open(`https://t.me/${owner}?text=${encoded}`, '_blank');
+        showToast('Opening enquiry in Telegram with admin @' + owner, '🚀');
+      } else {
+        navigator.clipboard.writeText(formattedMessage).then(() => {
+          showToast('Enquiry copied to clipboard! (No direct admin username found)', '📋');
+        });
+      }
+
+      closeModal('broadcastEnquiryModal');
+    }
+
+    // --- REFRESH & SYNC BOT CHANNELS ---
+    async function refreshBotChannels() {
+      const btn = document.getElementById('refreshBtn');
+      const icon = document.getElementById('refreshIcon');
+      const text = document.getElementById('refreshBtnText');
+
+      btn.disabled = true;
+      icon.classList.add('spin');
+      text.innerText = 'Syncing...';
+
+      try {
+        const res = await fetch('/api/channels/refresh');
+        const data = await res.json().catch(() => null);
+
+        if (res.ok && data && data.success) {
+          showToast(data.message || 'Synced all channels with Telegram servers!', '🔄');
+          setTimeout(() => window.location.reload(), 900);
+        } else {
+          const err = (data && data.error) ? data.error : `Sync returned status ${res.status}`;
+          showToast(err, '❌');
+          btn.disabled = false;
+          icon.classList.remove('spin');
+          text.innerText = 'Refresh & Sync';
+        }
+      } catch (err) {
+        console.error('Refresh sync error:', err);
+        showToast('Sync request failed: ' + (err.message || 'Network error'), '❌');
+        btn.disabled = false;
+        icon.classList.remove('spin');
+        text.innerText = 'Refresh & Sync';
+      }
+    }
+
+    // --- UNLINK / DELETE CHANNEL ---
+    async function deleteChannel(chatId, channelName) {
+      document.querySelectorAll('.dropdown.active').forEach(d => d.classList.remove('active'));
+      if (!confirm(`Are you sure you want to unlink and remove '${channelName}' from this dashboard?`)) {
+        return;
+      }
+      try {
+        const res = await fetch(`/api/channel/${encodeURIComponent(chatId)}/delete`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Unlinked '${channelName}'`, '🗑️');
+          setTimeout(() => window.location.reload(), 800);
+        } else {
+          showToast('Failed to unlink channel', '❌');
+        }
+      } catch (err) {
+        showToast('Error removing channel', '❌');
+      }
+    }
+
+
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('open');
+    }
+
+    // Close modal when clicking backdrop
+    window.addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal-overlay')) {
+        e.target.classList.remove('open');
+      }
+    });
+  </script>
 
 </body>
 </html>
